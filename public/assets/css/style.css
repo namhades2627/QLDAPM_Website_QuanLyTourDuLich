@@ -368,7 +368,7 @@ a, button, input, select { outline-offset: 5px; }
 .needs-option input { width: 15px; height: 15px; margin: 0; flex-shrink: 0; accent-color: var(--orange); }
 
 /* 5. TOUR NỔI BẬT — ảnh, nội dung, nơi khởi hành và giá. */
-.featured-section { padding-bottom: 48px; }
+.featured-section { padding-top: 48px; padding-bottom: 24px; }
 /* Thông tin khuyến mãi nhóm phía trên các thẻ tour. */
 .group-offer {
     display: grid;
@@ -413,7 +413,7 @@ a, button, input, select { outline-offset: 5px; }
 .sample-note { font-size: 10px; color: #7b7e75; margin-top: 15px; }
 
 /* 6. ĐIỂM ĐẾN — một ảnh lớn và bốn ảnh nhỏ. */
-.destinations-section { background: var(--surface); }
+.destinations-section { background: #ffffff; border-top: 1px solid var(--line); }
 .destination-tabs { display: flex; gap: 3px; padding: 4px; border: 1px solid #e1e2da; border-radius: 6px; background: #fff; flex-shrink: 0; }
 .destination-tab { padding: 9px 19px; background: none; border-radius: 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
 .destination-tab.is-active { background: var(--orange); color: #fff; }
@@ -1513,4 +1513,55 @@ a, button, input, select { outline-offset: 5px; }
     .booking-submit-row { flex-direction:column; align-items:stretch; text-align:center; }
     .booking-submit { width:100%; }
     .order-card-head { flex-direction:column; }
+}
+
+
+/* ===== HẠNG MỤC GỢI Ý TOUR THEO MÙA & KHUYẾN MÃI HÔM NAY ===== */
+.seasonal-section {
+    background: #ffffff;
+    padding-top: 24px;
+    padding-bottom: 24px;
+}
+.promo-section {
+    background: #ffffff;
+    padding-top: 24px;
+    padding-bottom: 48px;
+}
+.home-suggest-card {
+    position: relative;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.home-suggest-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+.home-card-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    letter-spacing: 0.02em;
+}
+.badge-season {
+    background: #c85a17;
+    color: #ffffff;
+}
+.badge-promo {
+    background: #d9381e;
+    color: #ffffff;
+}
+.promo-old-price {
+    display: block;
+    font-size: 12px;
+    color: #92948e;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+.promo-sale-price strong {
+    color: #d9381e !important;
 }

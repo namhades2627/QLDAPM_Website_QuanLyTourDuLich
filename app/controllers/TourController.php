@@ -113,11 +113,23 @@ class TourController
     public function detail(): void
     {
         $page = 'tour-detail';
-        $tourType = $this->queryString('type') === 'international' ? 'international' : 'domestic';
+        $rawType = $this->queryString('type');
+        $code = $this->queryString('id');
+        
+        // Tìm tour: nếu có type thì tìm theo type, nếu không tìm cả 2 loại để không bị 404
+        $tour = null;
+        $tourType = $rawType === 'international' ? 'international' : 'domestic';
+        if ($rawType !== '') {
+            $tour = $this->model->findPublishedTour($tourType, $code);
+        } else {
+            $tour = $this->model->findPublishedTour('domestic', $code);
+            if ($tour === null) {
+                $tour = $this->model->findPublishedTour('international', $code);
+                if ($tour !== null) $tourType = 'international';
+            }
+        }
         $typeTitle = $tourType === 'domestic' ? 'Tour trong nước' : 'Tour quốc tế';
         $tourRegion = '';
-        $code = $this->queryString('id');
-        $tour = $this->model->findPublishedTour($tourType, $code);
         $notFound = $tour === null;
         $relatedTours = [];
         $selectedSchedule = null;
