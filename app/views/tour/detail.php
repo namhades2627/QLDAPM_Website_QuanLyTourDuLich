@@ -36,7 +36,7 @@ if (!empty($itineraryWeather)) {
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="assets/js/script.js" defer></script>
 </head>
-<body class="detail-page" data-tour-id="<?= $escape($tour['id'] ?? '') ?>">
+<body class="detail-page" data-tour-id="<?= $escape($tour['id'] ?? '') ?>" data-tour-type="<?= $escape($tourType ?? '') ?>">
 <?php require __DIR__ . '/../partials/header.php'; ?>
 <main id="noi-dung" class="detail-main">
 <?php if ($notFound): ?>

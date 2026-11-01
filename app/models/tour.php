@@ -34,7 +34,7 @@ class TourModel
         $codeCondition = $code !== null ? ' AND t.ma_tour = ?' : '';
         $statement = $this->connection->prepare(
             "SELECT t.id_tour, t.ma_tour AS id, t.ten_tour AS name, t.gioi_thieu AS introduction,
-                    t.so_ngay AS days, t.duong_dan_anh AS image, t.noi_bat AS featured,
+                    t.so_ngay AS days, t.duong_dan_anh AS image, t.noi_bat AS featured, t.mua_vu AS season, t.phan_tram_giam AS discount_percent, t.nhan_uu_dai AS promo_tag,
                     k.loai_tour AS type,
                     d.ten_diem_den AS destination, d.id_diem_den AS destination_id, d.ma_khu_vuc AS region
              FROM tour t
