@@ -62,6 +62,39 @@ CREATE TABLE IF NOT EXISTS `tour` (
         REFERENCES `diem_den` (`id_diem_den`) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- BEGIN CAP_NHAT_2026_11_01_MUA_VU_UU_DAI
+-- CREATE TABLE IF NOT EXISTS không bổ sung cột cho bảng tour đã tồn tại.
+-- Chạy trước seed; chỉ thêm cột/chi mục còn thiếu, không ghi đè dữ liệu tour cũ.
+DROP PROCEDURE IF EXISTS `_ontrip_cap_nhat_mua_vu_uu_dai`;
+DELIMITER $$
+CREATE PROCEDURE `_ontrip_cap_nhat_mua_vu_uu_dai`()
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tour' AND COLUMN_NAME = 'mua_vu') THEN
+        ALTER TABLE `tour` ADD COLUMN `mua_vu` ENUM('tat_ca', 'xuan', 'ha', 'thu', 'dong') NOT NULL DEFAULT 'tat_ca' AFTER `noi_bat`;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tour' AND COLUMN_NAME = 'phan_tram_giam') THEN
+        ALTER TABLE `tour` ADD COLUMN `phan_tram_giam` TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER `mua_vu`;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tour' AND COLUMN_NAME = 'nhan_uu_dai') THEN
+        ALTER TABLE `tour` ADD COLUMN `nhan_uu_dai` VARCHAR(80) DEFAULT NULL AFTER `phan_tram_giam`;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tour' AND INDEX_NAME = 'idx_tours_season_status') THEN
+        ALTER TABLE `tour` ADD KEY `idx_tours_season_status` (`mua_vu`, `trang_thai`);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tour' AND INDEX_NAME = 'idx_tours_promo_status') THEN
+        ALTER TABLE `tour` ADD KEY `idx_tours_promo_status` (`phan_tram_giam`, `trang_thai`);
+    END IF;
+END$$
+DELIMITER ;
+CALL `_ontrip_cap_nhat_mua_vu_uu_dai`();
+DROP PROCEDURE `_ontrip_cap_nhat_mua_vu_uu_dai`;
+-- END CAP_NHAT_2026_11_01_MUA_VU_UU_DAI
+
 -- 5. Lich trình tour theo ngày
 CREATE TABLE IF NOT EXISTS `lich_trinh_ngay` (
     `id_lich_trinh_ngay` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -227,6 +260,74 @@ CREATE TABLE IF NOT EXISTS `thanh_toan` (
         REFERENCES `don_dat_tour` (`id_don_dat`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- END CAP_NHAT_2026_10_31_DON_DAT_TOUR
+
+-- BEGIN CAP_NHAT_2026_11_01_THONG_TIN_DON_DAT
+-- Nâng cấp bảng đơn đặt cũ; giữ nguyên tiền, trạng thái và ngày cập nhật của đơn.
+-- Đơn cũ chưa có thông tin chụp lại chỉ có thể khôi phục từ tour/lịch hiện tại.
+DROP PROCEDURE IF EXISTS `_ontrip_cap_nhat_thong_tin_don_dat`;
+DELIMITER $$
+CREATE PROCEDURE `_ontrip_cap_nhat_thong_tin_don_dat`()
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'ma_tour') THEN
+        ALTER TABLE `don_dat_tour` ADD COLUMN `ma_tour` VARCHAR(20) DEFAULT NULL COMMENT 'Chụp lại từ tour tại thời điểm đặt' AFTER `id_lich_khoi_hanh`;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'ten_tour') THEN
+        ALTER TABLE `don_dat_tour` ADD COLUMN `ten_tour` VARCHAR(255) DEFAULT NULL COMMENT 'Chụp lại từ tour tại thời điểm đặt' AFTER `ma_tour`;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'ngay_khoi_hanh') THEN
+        ALTER TABLE `don_dat_tour` ADD COLUMN `ngay_khoi_hanh` DATE DEFAULT NULL COMMENT 'Chụp lại từ lịch khởi hành' AFTER `ten_tour`;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'diem_khoi_hanh') THEN
+        ALTER TABLE `don_dat_tour` ADD COLUMN `diem_khoi_hanh` VARCHAR(120) DEFAULT NULL COMMENT 'Chụp lại từ lịch khởi hành' AFTER `ngay_khoi_hanh`;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'dia_chi') THEN
+        ALTER TABLE `don_dat_tour` ADD COLUMN `dia_chi` VARCHAR(255) DEFAULT NULL AFTER `so_dien_thoai`;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM `don_dat_tour` dd
+               LEFT JOIN `lich_khoi_hanh` l ON l.id_lich_khoi_hanh = dd.id_lich_khoi_hanh
+               LEFT JOIN `tour` t ON t.id_tour = l.id_tour
+               WHERE (dd.ma_tour IS NULL OR dd.ten_tour IS NULL OR dd.ngay_khoi_hanh IS NULL OR dd.diem_khoi_hanh IS NULL)
+                 AND (l.id_lich_khoi_hanh IS NULL OR t.id_tour IS NULL)) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Don cu mat lien ket tour/lich. Can doi chieu du lieu truoc khi nang cap.';
+    END IF;
+
+    UPDATE `don_dat_tour` dd
+    JOIN `lich_khoi_hanh` l ON l.id_lich_khoi_hanh = dd.id_lich_khoi_hanh
+    JOIN `tour` t ON t.id_tour = l.id_tour
+    SET dd.ma_tour = COALESCE(dd.ma_tour, t.ma_tour),
+        dd.ten_tour = COALESCE(dd.ten_tour, t.ten_tour),
+        dd.ngay_khoi_hanh = COALESCE(dd.ngay_khoi_hanh, l.ngay_khoi_hanh),
+        dd.diem_khoi_hanh = COALESCE(dd.diem_khoi_hanh, l.diem_khoi_hanh),
+        dd.cap_nhat_luc = dd.cap_nhat_luc
+    WHERE dd.ma_tour IS NULL OR dd.ten_tour IS NULL OR dd.ngay_khoi_hanh IS NULL OR dd.diem_khoi_hanh IS NULL;
+
+    IF EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'ma_tour' AND IS_NULLABLE = 'YES') THEN
+        ALTER TABLE `don_dat_tour` MODIFY COLUMN `ma_tour` VARCHAR(20) NOT NULL COMMENT 'Chụp lại từ tour tại thời điểm đặt';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'ten_tour' AND IS_NULLABLE = 'YES') THEN
+        ALTER TABLE `don_dat_tour` MODIFY COLUMN `ten_tour` VARCHAR(255) NOT NULL COMMENT 'Chụp lại từ tour tại thời điểm đặt';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'ngay_khoi_hanh' AND IS_NULLABLE = 'YES') THEN
+        ALTER TABLE `don_dat_tour` MODIFY COLUMN `ngay_khoi_hanh` DATE NOT NULL COMMENT 'Chụp lại từ lịch khởi hành';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'don_dat_tour' AND COLUMN_NAME = 'diem_khoi_hanh' AND IS_NULLABLE = 'YES') THEN
+        ALTER TABLE `don_dat_tour` MODIFY COLUMN `diem_khoi_hanh` VARCHAR(120) NOT NULL COMMENT 'Chụp lại từ lịch khởi hành';
+    END IF;
+END$$
+DELIMITER ;
+CALL `_ontrip_cap_nhat_thong_tin_don_dat`();
+DROP PROCEDURE `_ontrip_cap_nhat_thong_tin_don_dat`;
+-- END CAP_NHAT_2026_11_01_THONG_TIN_DON_DAT
 
 INSERT IGNORE INTO `khu_vuc_tour` (`ma_khu_vuc`, `ten_khu_vuc`, `loai_tour`, `thu_tu`) VALUES
     ('north', 'Miền Bắc', 'domestic', 1),

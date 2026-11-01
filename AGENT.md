@@ -94,6 +94,8 @@ Giá, lịch trình và lịch đi trong SQL là **dữ liệu demo phục vụ 
 | Navbar/footer khách hàng | `app/views/partials/header.php`, `footer.php`; không dùng làm khung quản trị |
 | Lỗi database khách hàng | `app/views/errors/database.php`; ghi chi tiết lỗi vào log, không đưa exception/SQL ra giao diện |
 | Database/kết nối | `database/ontrip.sql`, `config/database.php` |
+| Nâng cấp đơn đặt cũ (01/11/2026) | Khối `CAP_NHAT_2026_11_01_THONG_TIN_DON_DAT` bổ sung thông tin tour/lịch và địa chỉ còn thiếu trong `don_dat_tour`. Điền thông tin NULL từ tour/lịch hiện tại, giữ nguyên tiền, trạng thái, mốc thời gian và dữ liệu đã chụp; xem giới hạn khôi phục trong `database/database_changes.md`. |
+| Nâng cấp mùa vụ/ưu đãi tour (01/11/2026) | Bảng `tour` cũ cần chạy khối `CAP_NHAT_2026_11_01_MUA_VU_UU_DAI` trong `ontrip.sql` để thêm các cột `mua_vu`, `phan_tram_giam`, `nhan_uu_dai` và hai chỉ mục trước seed. `CREATE TABLE IF NOT EXISTS` không nâng cấp bảng cũ. Khối giữ dữ liệu hiện có và chạy lại được; xem `database/database_changes.md`. |
 | Toàn bộ CSS | **`public/assets/css/style.css`**, chia theo chú thích từng phần |
 | Toàn bộ JavaScript | **`public/assets/js/script.js`**, chia theo chú thích từng phần |
 | Ảnh | `public/assets/images/`, tour tại `images/tours/`, placeholder cục bộ |
