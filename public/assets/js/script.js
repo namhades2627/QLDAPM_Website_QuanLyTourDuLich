@@ -538,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function updateWeatherForecast(startDate, origin) {
             if (!startDate) return;
             const tourId = document.body.dataset.tourId;
+            const tourType = document.body.dataset.tourType || '';
             if (!tourId) return;
 
             const weatherOverview = document.querySelector('[data-weather-overview]');
@@ -550,7 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.querySelectorAll('[data-weather-card]').forEach(card => card.classList.add('is-loading'));
 
-            fetch(`index.php?page=tour-detail&action=weather&id=${encodeURIComponent(tourId)}&date=${encodeURIComponent(startDate)}`)
+            fetch(`index.php?page=tour-detail&action=weather&id=${encodeURIComponent(tourId)}&type=${encodeURIComponent(tourType)}&date=${encodeURIComponent(startDate)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.success && Array.isArray(data.weather)) {
